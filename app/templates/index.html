@@ -1,0 +1,62 @@
+<html>
+  <head>
+    <title>Execute command on remote host</title>
+  </head>
+  <body>
+    <button onclick="exec_remote_command();">Exec:</button>
+    <input id="command" name="command"  value="ping -c 4 8.8.8.8"><br><br>
+
+    <p>This is the latest output: <span id="latest"></span></p>
+    <p>This is all the output:</p>
+    <ul id="output"></ul>
+    <script>
+        function exec_remote_command() {
+            var latest = document.getElementById('latest');
+            var output = document.getElementById('output');
+
+            latest.innerHTML = "";
+            output.innerHTML = "";
+
+            var command = document.getElementById('command');
+            var params = 'command=' + command.value;
+            command.disabled = true;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '{{ url_for('execute') }}' + '?' + params);
+            xhr.send();
+            var position = 0;
+
+            function handleNewData() {
+                // the response text include the entire response so far
+                // split the messages, then take the messages that haven't been handled yet
+                // position tracks how many messages have been handled
+                // messages end with a newline, so split will always show one extra empty message at the end
+                var messages = xhr.responseText.split('\n');
+                messages.slice(position, -1).forEach(function(value) {
+                    latest.textContent = value;  // update the latest value in place
+                    // build and append a new item to a list to log all output
+                    var item = document.createElement('li');
+                    item.textContent = value;
+                    output.appendChild(item);
+                });
+                position = messages.length - 1;
+            }
+
+            var timer;
+            timer = setInterval(function() {
+                // check the response for new data
+                handleNewData();
+                // stop checking once the response has ended
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                    clearInterval(timer);
+                    var item = document.createElement('li');
+                    item.textContent = 'Done';
+                    output.appendChild(item);
+                    latest.textContent = 'Done';
+                    command.disabled = false;
+                }
+            }, 1000);
+        }
+    </script>
+  </body>
+</html>
