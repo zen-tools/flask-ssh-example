@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import select
 import paramiko
-import StringIO
+
+from io import StringIO
 from . import app
 from flask import render_template, request
 
@@ -16,7 +17,7 @@ def execute():
     def generate(command):
         with app.app_context():
             ssh_key = paramiko.RSAKey.from_private_key(
-                StringIO.StringIO(app.config['SSH_PRIV_KEY']))
+                StringIO(app.config['SSH_PRIV_KEY'].lstrip()))
 
             ssh_conn = paramiko.SSHClient()
             ssh_conn.set_missing_host_key_policy(
